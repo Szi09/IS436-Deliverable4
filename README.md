@@ -1,4 +1,4 @@
-# Restaurant Online Ordering System – System Design
+# Restaurant Online Ordering System
 
 ## Project Overview
 This project focuses on designing the data model and system architecture for a web-based restaurant ordering system. The goal is to enhance an existing restaurant website by integrating a complete online ordering system.
@@ -24,7 +24,7 @@ The project utilizes the following technologies:
 - **Version Control:** GitHub  
 
 
-## Project Components (Deliverable 4)
+## Project Components
 
 This repository includes:
 
