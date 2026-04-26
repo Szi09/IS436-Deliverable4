@@ -1,10 +1,7 @@
 -- Deliverable 4 – Data Modeling and Starting Design
--- Group: H
 -- Project: Web-Based Online Ordering System for Small Restaurant
 -- Database: PostgreSQL
--- File: deliverable4.sql
-
--- ============================================================================
+------------------------------------------------------------------------
 
 -- 1. USERS table
 CREATE TABLE USERS (
@@ -66,7 +63,7 @@ CREATE TABLE DELIVERY (
     estimated_time VARCHAR(100)
 );
 
--- =======================================================================================
+-----------------------------------------------------------------------------------------------
 
 -- Insert users (5 customers)
 INSERT INTO USERS (name, email, phone) VALUES
@@ -119,19 +116,19 @@ INSERT INTO ORDER_ITEMS (order_id, item_id, quantity, price_at_time) VALUES
 (5, 6, 1, 3.99),
 (5, 5, 1, 1.99);
 
--- Insert delivery records (only for delivery-type orders: order_id 1, 3, 5)
+-- Insert delivery records (only for delivery-type orders)
 INSERT INTO DELIVERY (order_id, address, city, state, zip_code, estimated_time) VALUES
 (1, '742 Evergreen Terrace', 'Springfield', 'MD', '21201', '25-35 minutes'),
 (3, '221B Baker Street', 'Baltimore', 'MD', '21218', '15-20 minutes'),
 (5, '742 Evergreen Terrace', 'Springfield', 'MD', '21201', '30-40 minutes');
 
--- =====================================================================================================
+---------------------------------------------------------------------------------------------
 
--- VERIFICATION QUERIES (run after insert to confirm)
--- SELECT * FROM USERS;
--- SELECT * FROM MENU_ITEMS;
--- SELECT * FROM CART;
--- SELECT * FROM CART_ITEMS;
--- SELECT * FROM ORDERS;
--- SELECT * FROM ORDER_ITEMS;
--- SELECT * FROM DELIVERY;
+-- VERIFICATION QUERIES
+SELECT * FROM USERS;
+SELECT * FROM MENU_ITEMS;
+SELECT * FROM CART;
+SELECT * FROM CART_ITEMS;
+SELECT * FROM ORDERS;
+SELECT * FROM ORDER_ITEMS;
+SELECT * FROM DELIVERY;
