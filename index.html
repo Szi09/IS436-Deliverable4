@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restaurant Store - Home</title>
+
+  <!-- Bootstrap 5 (same as typical PHP/Bootstrap restaurant sites) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" />
+
+  <style>
+    /* ── Keep the same look/feel as the original PHP site ── */
+    body {
+      background-color: #f8f9fa;
+    }
+
+    /* Navbar */
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.4rem;
+    }
+
+    /* Cards */
+    .card {
+      border: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      transition: box-shadow .2s;
+    }
+    .card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,.14);
+    }
+    .card-img-top {
+      object-fit: cover;
+      height: 200px;
+    }
+
+    /* Footer */
+    footer {
+      background-color: #343a40;
+      color: #adb5bd;
+      padding: 1.5rem 0;
+      margin-top: 3rem;
+    }
+
+    /* Search bar */
+    #search-form .input-group {
+      max-width: 480px;
+    }
+
+    /* Category sidebar active state */
+    .list-group-item.active {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+    }
+
+    /* Loading spinner */
+    #loading {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════  NAVBAR  ═══════════════════════ -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+  <div class="container">
+    <a class="navbar-brand" href="index.html">🍽 Restaurant Store</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link active" href="index.html">Home</a></li>
+        <!-- Add other nav links here as needed -->
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════  MAIN CONTENT  ═══════════════════════ -->
+<div class="container">
+
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="mb-3">Welcome to Our Restaurant Store</h1>
+      <p>Browse our delicious menu items. Use the search bar or the category menu to find your favorite dishes.</p>
+    </div>
+  </div>
+
+  <!-- Search bar — mirrors the original ?q= GET param behaviour -->
+  <form id="search-form" class="mb-4">
+    <div class="input-group">
+      <input type="text" id="search-input" class="form-control" placeholder="Search products…" />
+      <button class="btn btn-primary" type="submit">Search</button>
+      <button class="btn btn-outline-secondary" type="button" id="clear-btn">Clear</button>
+    </div>
+  </form>
+
+  <!-- Search-results banner (shown when a search term is active) -->
+  <div id="search-banner" class="alert alert-info d-none"></div>
+
+  <div class="row">
+    <!-- Category sidebar -->
+    <div class="col-md-3 mb-4">
+      <h5 class="mb-3">Categories</h5>
+      <ul class="list-group" id="category-list">
+        <li class="list-group-item list-group-item-action active" data-id="0">All Categories</li>
+        <!-- Populated by JS -->
+      </ul>
+    </div>
+
+    <!-- Product grid -->
+    <div class="col-md-9">
+      <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Loading products…</p>
+      </div>
+
+      <div class="row" id="product-grid">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ═══════════════════════  FOOTER  ═══════════════════════ -->
+<footer>
+  <div class="container text-center">
+    <p class="mb-0">&copy; <span id="year"></span> Restaurant Store. All rights reserved.</p>
+  </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   DATA LAYER
+   ─────────────────────────────────────────────────────────────
+   Previously this came from PHP + PDO querying MySQL.
+   Now it is loaded from  products.json  (a static file you
+   export from MySQL Workbench — see README below).
+
+   products.json shape expected:
+   [
+     {
+       "id": 1,
+       "name": "Margherita Pizza",
+       "description": "Classic tomato and mozzarella.",
+       "price": "12.99",
+       "image_name": "margherita.jpg",
+       "category_id": 2,
+       "category_name": "Pizza"
+     },
+     …
+   ]
+══════════════════════════════════════════════════════════════ */
+
+document.getElementById('year').textContent = new Date().getFullYear();
+
+let allProducts   = [];   // full dataset loaded once
+let activeCategory = 0;   // 0 = "All"
+let searchTerm     = '';
+
+/* ── Render helpers ───────────────────────────────────────── */
+
+function renderCategories(products) {
+  const seen = new Map();
+  products.forEach(p => {
+    if (p.category_id && p.category_name && !seen.has(p.category_id)) {
+      seen.set(p.category_id, p.category_name);
+    }
+  });
+
+  const list = document.getElementById('category-list');
+  // Keep "All" item, remove old dynamically added items
+  while (list.children.length > 1) list.removeChild(list.lastChild);
+
+  seen.forEach((name, id) => {
+    const li = document.createElement('li');
+    li.className = 'list-group-item list-group-item-action';
+    li.dataset.id = id;
+    li.textContent = name;
+    li.addEventListener('click', () => selectCategory(id));
+    list.appendChild(li);
+  });
+}
+
+function renderProducts(products) {
+  const grid = document.getElementById('product-grid');
+  grid.innerHTML = '';
+
+  if (products.length === 0) {
+    grid.innerHTML = '<div class="col-12"><div class="alert alert-warning">No products found.</div></div>';
+    return;
+  }
+
+  products.forEach(p => {
+    const price      = parseFloat(p.price).toFixed(2);
+    const desc       = p.description ? p.description.substring(0, 120) : '';
+    const imgHtml    = p.image_name
+      ? `<img src="images/${escHtml(p.image_name)}" class="card-img-top" alt="${escHtml(p.name)}">`
+      : '';
+    const catHtml    = p.category_name
+      ? `<h6 class="card-subtitle mb-2 text-muted">Category: ${escHtml(p.category_name)}</h6>`
+      : '';
+
+    const col = document.createElement('div');
+    col.className = 'col-md-4 mb-4';
+    col.innerHTML = `
+      <div class="card h-100">
+        ${imgHtml}
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">${escHtml(p.name)}</h5>
+          ${catHtml}
+          <p class="card-text flex-grow-1">${escHtml(desc)}…</p>
+          <p class="fw-bold mb-2">$${price}</p>
+          <a href="product_detail.html?id=${encodeURIComponent(p.id)}" class="btn btn-primary mt-auto">View Details</a>
+        </div>
+      </div>`;
+    grid.appendChild(col);
+  });
+}
+
+function applyFilters() {
+  let filtered = allProducts;
+
+  if (searchTerm) {
+    const q = searchTerm.toLowerCase();
+    filtered = filtered.filter(p =>
+      (p.name        && p.name.toLowerCase().includes(q)) ||
+      (p.description && p.description.toLowerCase().includes(q))
+    );
+  }
+
+  if (activeCategory !== 0) {
+    filtered = filtered.filter(p => p.category_id === activeCategory);
+  }
+
+  // Search banner
+  const banner = document.getElementById('search-banner');
+  if (searchTerm) {
+    banner.classList.remove('d-none');
+    banner.innerHTML = `Search results for: <strong>${escHtml(searchTerm)}</strong>`;
+  } else {
+    banner.classList.add('d-none');
+  }
+
+  renderProducts(filtered);
+}
+
+function selectCategory(id) {
+  activeCategory = id;
+  // Update active class on sidebar
+  document.querySelectorAll('#category-list .list-group-item').forEach(li => {
+    li.classList.toggle('active', parseInt(li.dataset.id) === id);
+  });
+  applyFilters();
+}
+
+/* ── Search form ──────────────────────────────────────────── */
+
+document.getElementById('search-form').addEventListener('submit', e => {
+  e.preventDefault();
+  searchTerm = document.getElementById('search-input').value.trim();
+  applyFilters();
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  searchTerm = '';
+  document.getElementById('search-input').value = '';
+  applyFilters();
+});
+
+document.getElementById('category-list').addEventListener('click', e => {
+  const li = e.target.closest('.list-group-item');
+  if (!li) return;
+  selectCategory(parseInt(li.dataset.id));
+});
+
+/* ── Bootstrap: "All Categories" click ───────────────────── */
+document.querySelector('#category-list .list-group-item').addEventListener('click', () => selectCategory(0));
+
+/* ── Utility ──────────────────────────────────────────────── */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ── Load products.json ───────────────────────────────────── */
+async function loadProducts() {
+  document.getElementById('loading').style.display = 'block';
+  try {
+    const res = await fetch('products.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    allProducts = await res.json();
+    // Sort by name (mirrors ORDER BY p.name in original SQL)
+    allProducts.sort((a, b) => a.name.localeCompare(b.name));
+    renderCategories(allProducts);
+    applyFilters();
+  } catch (err) {
+    console.error('Could not load products.json:', err);
+    document.getElementById('product-grid').innerHTML = `
+      <div class="col-12">
+        <div class="alert alert-danger">
+          <strong>Could not load product data.</strong><br>
+          Make sure <code>products.json</code> is in the same folder as this file.<br>
+          <small class="text-muted">${escHtml(err.message)}</small>
+        </div>
+      </div>`;
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+loadProducts();
+</script>
+
+<!--
+════════════════════════════════════════════════════════════════
+  HOW TO GENERATE products.json FROM MYSQL WORKBENCH
+════════════════════════════════════════════════════════════════
+  Run this query in MySQL Workbench, then export the result
+  as JSON (Results Grid → Export → JSON):
+
+    SELECT p.id,
+           p.name,
+           p.description,
+           p.price,
+           p.image_name,
+           p.category_id,
+           c.name AS category_name
+    FROM   t_IS448_F25_products p
+    LEFT JOIN t_IS448_F25_categories c ON p.category_id = c.id
+    ORDER BY p.name;
+
+  Save the output as  products.json  next to this index.html.
+  When running via Docker, mount the folder so the file is
+  served by your container's web server (e.g. nginx / apache).
+════════════════════════════════════════════════════════════════
+-->
+</html>

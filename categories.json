@@ -1,0 +1,7 @@
+[
+  { "id": 1, "name": "Pizza",    "description": "Hand-tossed and oven-baked pizzas." },
+  { "id": 2, "name": "Salads",   "description": "Fresh, crisp salads." },
+  { "id": 3, "name": "Pasta",    "description": "Classic Italian pasta dishes." },
+  { "id": 4, "name": "Desserts", "description": "Sweet treats to finish your meal." },
+  { "id": 5, "name": "Sides",    "description": "Perfect accompaniments." }
+]

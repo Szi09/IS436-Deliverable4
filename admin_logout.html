@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- File: admin_logout.html  (converted from admin_logout.php) -->
+    <meta charset="UTF-8">
+    <title>Logging out…</title>
+</head>
+<body>
+<script>
+/* Mirrors: session_destroy() + header('Location: admin_login.php') */
+sessionStorage.removeItem('admin_logged_in');
+sessionStorage.removeItem('admin_username');
+window.location.href = 'admin_login.html';
+</script>
+</body>
+</html>

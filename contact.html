@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- File: contact.html  (converted from contact.php + includes/header.php) -->
+    <meta charset="UTF-8">
+    <title>Contact Us - Restaurant Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- HEADER / NAV -->
+<header class="site-header mb-4">
+    <nav class="navbar navbar-expand-lg navbar-light container">
+        <a class="navbar-brand fw-bold" href="index.html">Restaurant Store</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                <li class="nav-item dropdown" id="nav-category-item" style="display:none;">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarCategoryDropdown"
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Menu Categories
+                    </a>
+                    <ul class="dropdown-menu" id="nav-category-menu" aria-labelledby="navbarCategoryDropdown"></ul>
+                </li>
+                <li class="nav-item"><a class="nav-link active" href="contact.html">Contact</a></li>
+            </ul>
+            <form class="d-flex" id="search-form">
+                <input class="form-control me-2" type="search" id="search-input"
+                       name="q" placeholder="Search dishes..." aria-label="Search">
+                <button class="btn btn-outline-primary" type="submit">Search</button>
+            </form>
+        </div>
+    </nav>
+</header>
+
+<main class="container mb-5">
+
+    <div class="row">
+        <div class="col-md-8">
+            <h1>Contact Us</h1>
+            <p>If you have any questions about our menu or services, please send us a message.</p>
+
+            <!-- Success / error alerts -->
+            <div id="alert-success" class="alert alert-success" style="display:none;">
+                Thank you! Your message has been sent.
+            </div>
+            <div id="alert-errors" class="alert alert-danger" style="display:none;">
+                <ul class="mb-0" id="error-list"></ul>
+            </div>
+
+            <!--
+                Contact form.
+                Previously inserted into MySQL via PDO.
+                Now saves messages to contact_messages.json via the admin panel,
+                or you can replace this with a mailto: action or any API endpoint.
+
+                For this static build: messages are saved to localStorage so the
+                admin panel (admin_contacts.html) can read and display them
+                within the same browser session / origin — no server needed.
+            -->
+            <form class="mb-4" id="contact-form" novalidate>
+                <div class="mb-3">
+                    <label for="name" class="form-label">Your Name*</label>
+                    <input type="text" id="name" name="name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Your Email*</label>
+                    <input type="email" id="email" name="email" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="message" class="form-label">Message*</label>
+                    <textarea id="message" name="message" rows="5" class="form-control" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+        </div>
+
+        <div class="col-md-4">
+            <h2>Our Location</h2>
+            <p>
+                123 Main Street<br>
+                Your City, MD 21234<br>
+                Phone: (555) 123-4567
+            </p>
+            <p>
+                Business Hours:<br>
+                Mon-Fri: 11:00 AM - 10:00 PM<br>
+                Sat-Sun: 12:00 PM - 11:00 PM
+            </p>
+        </div>
+    </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer py-3 mt-auto">
+    <div class="container text-center">
+        <p class="mb-0">&copy; <span id="footer-year"></span> Restaurant Store. All rights reserved.</p>
+        <p class="mb-0"><a href="admin_login.html">Admin Login</a></p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+document.getElementById('search-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const q = document.getElementById('search-input').value.trim();
+    window.location.href = 'index.html' + (q ? '?q=' + encodeURIComponent(q) : '');
+});
+
+/* Validate email — mirrors filter_var($email, FILTER_VALIDATE_EMAIL) */
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+document.getElementById('contact-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const name    = document.getElementById('name').value.trim();
+    const email   = document.getElementById('email').value.trim();
+    const message = document.getElementById('message').value.trim();
+
+    const errors = [];
+    if (!name)             errors.push('Name is required.');
+    if (!email || !isValidEmail(email)) errors.push('Valid email is required.');
+    if (!message)          errors.push('Message is required.');
+
+    const alertErrors  = document.getElementById('alert-errors');
+    const alertSuccess = document.getElementById('alert-success');
+    const errorList    = document.getElementById('error-list');
+
+    if (errors.length) {
+        errorList.innerHTML = errors.map(err => `<li>${esc(err)}</li>`).join('');
+        alertErrors.style.display  = '';
+        alertSuccess.style.display = 'none';
+        return;
+    }
+
+    alertErrors.style.display = 'none';
+
+    /* Save to localStorage so admin_contacts.html can read them */
+    const messages = JSON.parse(localStorage.getItem('contact_messages') || '[]');
+    messages.unshift({
+        id:         Date.now(),
+        name,
+        email,
+        message,
+        created_at: new Date().toLocaleString()
+    });
+    localStorage.setItem('contact_messages', JSON.stringify(messages));
+
+    alertSuccess.style.display = '';
+    document.getElementById('contact-form').reset();
+});
+
+(async function init() {
+    await loadAndApplySiteSettings();
+    const categories = await getAllCategories();
+    const item = document.getElementById('nav-category-item');
+    const menu = document.getElementById('nav-category-menu');
+    if (categories.length) {
+        item.style.display = '';
+        categories.forEach(cat => {
+            const li = document.createElement('li');
+            li.innerHTML = `<a class="dropdown-item" href="index.html?category_id=${encodeURIComponent(cat.id)}">${esc(cat.name)}</a>`;
+            menu.appendChild(li);
+        });
+    }
+})();
+</script>
+</body>
+</html>

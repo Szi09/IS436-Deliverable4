@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- File: index.html  (converted from index.php + includes/header.php) -->
+    <meta charset="UTF-8">
+    <title>Restaurant Store - Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap 5 CSS via CDN for simple, modern styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS (converted from css/styles.php) -->
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Site colour settings are applied at runtime by data.js -->
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     HEADER / NAV  (converted from includes/header.php)
+     ══════════════════════════════════════════════ -->
+<header class="site-header mb-4">
+    <nav class="navbar navbar-expand-lg navbar-light container">
+        <a class="navbar-brand fw-bold" href="index.html">Restaurant Store</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">Home</a>
+                </li>
+                <!-- Category dropdown populated by JS -->
+                <li class="nav-item dropdown" id="nav-category-item" style="display:none;">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarCategoryDropdown"
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Menu Categories
+                    </a>
+                    <ul class="dropdown-menu" id="nav-category-menu" aria-labelledby="navbarCategoryDropdown">
+                        <!-- filled by JS -->
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="contact.html">Contact</a>
+                </li>
+            </ul>
+            <!-- Search form — mirrors ?q= GET param -->
+            <form class="d-flex" id="search-form">
+                <input class="form-control me-2" type="search" id="search-input"
+                       name="q" placeholder="Search dishes..." aria-label="Search">
+                <button class="btn btn-outline-primary" type="submit">Search</button>
+            </form>
+        </div>
+    </nav>
+</header>
+
+<!-- ══════════════════════════════════════════════
+     MAIN  (converted from index.php body)
+     ══════════════════════════════════════════════ -->
+<main class="container mb-5">
+
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-3">Welcome to Our Restaurant Store</h1>
+            <p>Browse our delicious menu items. Use the search bar or the category menu to find your favorite dishes.</p>
+        </div>
+    </div>
+
+    <!-- Search-results banner (mirrors the PHP $search check) -->
+    <div class="alert alert-info" id="search-banner" style="display:none;"></div>
+
+    <!-- Product grid -->
+    <div class="row" id="product-grid">
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+    </div>
+
+</main>
+
+<!-- ══════════════════════════════════════════════
+     FOOTER  (converted from includes/footer.php)
+     ══════════════════════════════════════════════ -->
+<footer class="site-footer py-3 mt-auto">
+    <div class="container text-center">
+        <p class="mb-0">&copy; <span id="footer-year"></span> Restaurant Store. All rights reserved.</p>
+        <p class="mb-0"><a href="admin_login.html">Admin Login</a></p>
+    </div>
+</footer>
+
+<!-- Bootstrap 5 JS (Bundle) via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Shared data layer (replaces db_connect.php + functions.php) -->
+<script src="js/data.js"></script>
+<!-- Confirm-delete helper (converted from js/main.php) -->
+<script src="js/main.js"></script>
+
+<script>
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+/* ── Read URL params (mirrors $_GET) ── */
+const params     = getQueryParams();
+let   searchTerm = params['q']           ? params['q'].trim()        : '';
+let   catId      = params['category_id'] ? parseInt(params['category_id']) : 0;
+
+/* Pre-fill search box from URL */
+if (searchTerm) document.getElementById('search-input').value = searchTerm;
+
+/* ── Search form submit ── */
+document.getElementById('search-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const q = document.getElementById('search-input').value.trim();
+    const url = new URL(window.location.href);
+    if (q) url.searchParams.set('q', q); else url.searchParams.delete('q');
+    url.searchParams.delete('category_id');
+    window.location.href = url.toString();
+});
+
+/* ── Render category dropdown ── */
+function renderCategoryNav(categories) {
+    if (!categories.length) return;
+    const item = document.getElementById('nav-category-item');
+    const menu = document.getElementById('nav-category-menu');
+    item.style.display = '';
+    categories.forEach(cat => {
+        const li = document.createElement('li');
+        li.innerHTML = `<a class="dropdown-item" href="index.html?category_id=${encodeURIComponent(cat.id)}">${esc(cat.name)}</a>`;
+        menu.appendChild(li);
+    });
+}
+
+/* ── Render product grid ── */
+function renderProducts(products) {
+    const grid = document.getElementById('product-grid');
+    grid.innerHTML = '';
+
+    if (!products.length) {
+        grid.innerHTML = '<div class="col-12"><div class="alert alert-warning">No products found.</div></div>';
+        return;
+    }
+
+    products.forEach(p => {
+        const price   = parseFloat(p.price).toFixed(2);
+        const desc    = (p.description || '').substring(0, 120);
+        const imgHtml = p.image_name
+            ? `<img src="images/${esc(p.image_name)}" class="card-img-top" alt="${esc(p.name)}">`
+            : '';
+        const catHtml = p.category_name
+            ? `<h6 class="card-subtitle mb-2 text-muted">Category: ${esc(p.category_name)}</h6>`
+            : '';
+
+        const col = document.createElement('div');
+        col.className = 'col-md-4 mb-4';
+        col.innerHTML = `
+            <div class="card h-100">
+                ${imgHtml}
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">${esc(p.name)}</h5>
+                    ${catHtml}
+                    <p class="card-text flex-grow-1">${esc(desc)}...</p>
+                    <p class="fw-bold mb-2">$${price}</p>
+                    <a href="product_detail.html?id=${encodeURIComponent(p.id)}" class="btn btn-primary mt-auto">View Details</a>
+                </div>
+            </div>`;
+        grid.appendChild(col);
+    });
+}
+
+/* ── Search banner (mirrors the PHP $search block) ── */
+function renderSearchBanner(term) {
+    const banner = document.getElementById('search-banner');
+    if (term) {
+        banner.style.display = '';
+        banner.innerHTML = `Search results for: <strong>${esc(term)}</strong>`;
+    } else {
+        banner.style.display = 'none';
+    }
+}
+
+/* ── Boot ── */
+(async function init() {
+    await loadAndApplySiteSettings();
+    const [categories, products] = await Promise.all([
+        getAllCategories(),
+        getProducts(searchTerm || null, catId || null)
+    ]);
+    renderCategoryNav(categories);
+    renderSearchBanner(searchTerm);
+    renderProducts(products);
+})();
+</script>
+</body>
+</html>

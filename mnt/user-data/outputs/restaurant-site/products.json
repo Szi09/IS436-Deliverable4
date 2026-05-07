@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1, "name": "Margherita Pizza",
+    "description": "Classic tomato sauce, fresh mozzarella, and basil on a hand-tossed crust.",
+    "price": "12.99", "image_name": "", "category_id": 1, "category_name": "Pizza"
+  },
+  {
+    "id": 2, "name": "BBQ Chicken Pizza",
+    "description": "Smoky BBQ sauce, grilled chicken, red onion, and cheddar cheese.",
+    "price": "14.99", "image_name": "", "category_id": 1, "category_name": "Pizza"
+  },
+  {
+    "id": 3, "name": "Caesar Salad",
+    "description": "Crisp romaine lettuce, parmesan shavings, croutons, and house Caesar dressing.",
+    "price": "9.99",  "image_name": "", "category_id": 2, "category_name": "Salads"
+  },
+  {
+    "id": 4, "name": "Spaghetti Bolognese",
+    "description": "Slow-cooked beef and tomato ragù over al dente spaghetti, topped with parmesan.",
+    "price": "15.99", "image_name": "", "category_id": 3, "category_name": "Pasta"
+  },
+  {
+    "id": 5, "name": "Tiramisu",
+    "description": "Layers of espresso-soaked ladyfingers and mascarpone cream, dusted with cocoa.",
+    "price": "7.99",  "image_name": "", "category_id": 4, "category_name": "Desserts"
+  },
+  {
+    "id": 6, "name": "Garlic Bread",
+    "description": "Toasted baguette with herb butter and roasted garlic.",
+    "price": "4.99",  "image_name": "", "category_id": 5, "category_name": "Sides"
+  }
+]

@@ -1,63 +1,81 @@
-# Restaurant Online Ordering System
+# Restaurant Store — Static Site (No PHP)
 
-## Project Overview
-This project focuses on designing the data model and system architecture for a web-based restaurant ordering system. The goal is to enhance an existing restaurant website by integrating a complete online ordering system.
+## File map (PHP → HTML/JS)
 
-The system allows customers to browse the menu, add items to a cart, select delivery or pickup, and complete checkout. It also provides administrative functionality for managing orders.
+| Original PHP file           | Converted to             |
+|-----------------------------|--------------------------|
+| `index.php`                 | `index.html`             |
+| `product_detail.php`        | `product_detail.html`    |
+| `contact.php`               | `contact.html`           |
+| `admin_login.php`           | `admin_login.html`       |
+| `admin_logout.php`          | `admin_logout.html`      |
+| `admin_dashboard.php`       | `admin_dashboard.html`   |
+| `admin_categories.php`      | `admin_categories.html`  |
+| `admin_products.php`        | `admin_products.html`    |
+| `admin_contacts.php`        | `admin_contacts.html`    |
+| `admin_settings.php`        | `admin_settings.html`    |
+| `css/styles.php`            | `css/styles.css`         |
+| `js/main.php`               | `js/main.js`             |
+| `includes/db_connect.php`   | `js/data.js`             |
+| `includes/functions.php`    | `js/data.js`             |
 
-## Key Use Cases
-The system is designed around the following core functionalities:
+---
 
-- Add Item to Cart  
-- Edit Cart (update quantity, remove items, save for later)  
-- Enter Delivery Address or Select Pickup  
-- Checkout (order placement)  
-- Admin Manage Orders (update order status and track activity)
+## How to export real data from MySQL Workbench
 
-## Technologies Used
-The project utilizes the following technologies:
+### products.json
+```sql
+SELECT p.id, p.name, p.description, p.price, p.image_name,
+       p.category_id, c.name AS category_name
+FROM   t_IS448_F25_products p
+LEFT JOIN t_IS448_F25_categories c ON p.category_id = c.id
+ORDER BY p.name;
+```
+Results Grid → Export → JSON → save as **`products.json`** in this folder.
 
-- **Database:** MySQL Workbench  
-- **Containerization:** Docker  
-- **Query Language:** SQL  
-- **Modeling Tools:** Lucidchart / Draw.io  
-- **Version Control:** GitHub  
+### categories.json
+```sql
+SELECT id, name, description
+FROM   t_IS448_F25_categories
+ORDER BY name;
+```
+Save as **`categories.json`**.
 
+### settings.json  *(optional — site colour customisation)*
+```sql
+SELECT color_h1, color_h2, color_h3, color_p,
+       color_header_bg, color_body_bg, color_footer_bg
+FROM   t_IS448_F25_site_settings LIMIT 1;
+```
+Save as **`settings.json`**. If absent, default colours are used.
 
-## Project Components
+---
 
-This repository includes:
+## Admin login
 
-- ERD  
-- Data Model Description 
-- SQL Script  
-- Alternative Design Strategy Matrix  
-- System Architecture Diagram  
+Credentials are read from **`admin_credentials.json`** (plain-text, no bcrypt).  
+Default: `admin` / `admin123` — change before deploying.
 
-## System Scope
+---
 
-This system focuses on improving restaurant operations by:
+## Docker (nginx)
 
-- Reducing manual order errors  
-- Providing a structured cart and checkout experience  
-- Supporting delivery and pickup workflows  
-- Enabling admin-level order tracking and management  
+```dockerfile
+FROM nginx:alpine
+COPY . /usr/share/nginx/html
+```
 
-## Team Information
+```bash
+docker build -t restaurant-site .
+docker run -p 8080:80 restaurant-site
+```
+Open `http://localhost:8080`.  No PHP module required.
 
-**Team Name:** Shawarma  
+---
 
-**Project Contact Email:** cgyimah1@umbc.edu  
+## Where admin edits are stored
 
-### Team Members:
-- Candace Gyimah (Project Manager) 1
-- Hannah Tripp (Business Analyst) 2
-- Sarah Goriola(UI/UX designer)  3
-- Andrew Kolocotronis(Testing/Risk Analyst) 4 
-- Sheraz Iqbal(UI/UX designer) 5
- 
-## Meeting Schedule
-The team meets weekly:
-
-- **Day:** Friday  
-- **Time:** Afternoon - Evening  
+Because there is no server, admin CRUD changes (categories, products, site colours) are
+persisted to **browser localStorage** on the same origin. They survive page refreshes
+but are per-browser. To make edits permanent, export the updated data from the admin
+panel back to your JSON files and commit them to GitHub.
