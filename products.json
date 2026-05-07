@@ -4,7 +4,7 @@
     "name": "Margherita Pizza",
     "description": "Classic tomato sauce, fresh mozzarella, and basil on a hand-tossed crust.",
     "price": "12.99",
-    "image_name": "",
+    "image_name": "margherita-pizza.jpg",
     "category_id": 1,
     "category_name": "Pizza"
   },
@@ -13,7 +13,7 @@
     "name": "BBQ Chicken Pizza",
     "description": "Smoky BBQ sauce, grilled chicken, red onion, and cheddar cheese.",
     "price": "14.99",
-    "image_name": "",
+    "image_name": "bbq-chicken-pizza-09-2.jpg",
     "category_id": 1,
     "category_name": "Pizza"
   },
@@ -22,7 +22,7 @@
     "name": "Caesar Salad",
     "description": "Crisp romaine lettuce, parmesan shavings, croutons, and house Caesar dressing.",
     "price": "9.99",
-    "image_name": "",
+    "image_name": "220905_DD_Chx-Caesar-Salad_051.jpg",
     "category_id": 2,
     "category_name": "Salads"
   },
@@ -31,7 +31,7 @@
     "name": "Spaghetti Bolognese",
     "description": "Slow-cooked beef and tomato ragù over al dente spaghetti, topped with parmesan.",
     "price": "15.99",
-    "image_name": "",
+    "image_name": "Spaghetti-Bolognese.jpg",
     "category_id": 3,
     "category_name": "Pasta"
   },
@@ -40,7 +40,7 @@
     "name": "Tiramisu",
     "description": "Layers of espresso-soaked ladyfingers and mascarpone cream, dusted with cocoa.",
     "price": "7.99",
-    "image_name": "",
+    "image_name": "tiramisu.jpg",
     "category_id": 4,
     "category_name": "Desserts"
   },
@@ -49,8 +49,26 @@
     "name": "Garlic Bread",
     "description": "Toasted baguette with herb butter and roasted garlic.",
     "price": "4.99",
-    "image_name": "",
+    "image_name": "GarlicBread.jpg",
     "category_id": 5,
     "category_name": "Sides"
+  },
+  {
+    "id": 7,
+    "name": "Fries",
+    "description": "Crispy golden fries served with a side of ketchup.",
+    "price": "3.99",
+    "image_name": "French-Fries.jpg",
+    "category_id": 5,
+    "category_name": "Sides"
+  },
+  {
+    "id": 8,
+    "name": "Greek Salad",
+    "description": "Fresh cucumbers, tomatoes, olives, and feta cheese with a light vinaigrette.",
+    "price": "8.99",
+    "image_name": "Greek-Salad.jpg",
+    "category_id": 2,
+    "category_name": "Salads"
   }
 ]
