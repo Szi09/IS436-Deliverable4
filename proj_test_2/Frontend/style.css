@@ -1,0 +1,36 @@
+body {
+  font-family: Arial;
+  padding: 20px;
+}
+
+h1 {
+  color: darkgreen;
+}
+
+.menu {
+  display: flex;
+  gap: 20px;
+}
+
+.item {
+  border: 1px solid #ccc;
+  padding: 10px;
+  width: 200px;
+}
+
+button {
+  background-color: orange;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+td, th {
+  border: 1px solid black;
+  padding: 8px;
+}

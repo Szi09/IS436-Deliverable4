@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Delivery or Pickup</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Delivery or Pickup</h1>
+
+<label>
+  <input type="radio" name="type" onclick="showDelivery()"> Delivery
+</label>
+
+<label>
+  <input type="radio" name="type" onclick="hideDelivery()"> Pickup
+</label>
+
+<div id="deliveryForm" style="display:none;">
+  <h3>Enter Address</h3>
+  <input type="text" placeholder="Address"><br>
+  <input type="text" placeholder="City"><br>
+  <input type="text" placeholder="State"><br>
+  <input type="text" placeholder="Zip Code"><br>
+  <p>Estimated Time: 30 minutes</p>
+</div>
+
+<br>
+<a href="checkout.html">Continue</a>
+
+<script>
+function showDelivery() {
+  document.getElementById("deliveryForm").style.display = "block";
+}
+
+function hideDelivery() {
+  document.getElementById("deliveryForm").style.display = "none";
+}
+</script>
+
+</body>
+</html>
