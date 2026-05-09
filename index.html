@@ -136,31 +136,10 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="data.js"></script>
 <script src="store.js"></script>
 
 <script>
-/* ══════════════════════════════════════════════════════════════
-   DATA LAYER
-   ─────────────────────────────────────────────────────────────
-   Previously this came from PHP + PDO querying MySQL.
-   Now it is loaded from  products.json  (a static file you
-   export from MySQL Workbench — see README below).
-
-   products.json shape expected:
-   [
-     {
-       "id": 1,
-       "name": "Margherita Pizza",
-       "description": "Classic tomato and mozzarella.",
-       "price": "12.99",
-       "image_name": "margherita.jpg",
-       "category_id": 2,
-       "category_name": "Pizza"
-     },
-     …
-   ]
-══════════════════════════════════════════════════════════════ */
-
 document.getElementById('year').textContent = new Date().getFullYear();
 
 let allProducts   = [];   // full dataset loaded once
@@ -289,24 +268,22 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-/* ── Load products.json ───────────────────────────────────── */
+/* ── Load products from API ───────────────────────────────────── */
 async function loadProducts() {
   document.getElementById('loading').style.display = 'block';
   try {
-    const res = await fetch('products.json');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    allProducts = await res.json();
-    // Sort by name (mirrors ORDER BY p.name in original SQL)
+    allProducts = await getProducts();
+    // Sort by name
     allProducts.sort((a, b) => a.name.localeCompare(b.name));
     renderCategories(allProducts);
     applyFilters();
   } catch (err) {
-    console.error('Could not load products.json:', err);
+    console.error('Could not load products from API:', err);
     document.getElementById('product-grid').innerHTML = `
       <div class="col-12">
         <div class="alert alert-danger">
           <strong>Could not load product data.</strong><br>
-          Make sure <code>products.json</code> is in the same folder as this file.<br>
+          Please check that the API is running and accessible.<br>
           <small class="text-muted">${escHtml(err.message)}</small>
         </div>
       </div>`;

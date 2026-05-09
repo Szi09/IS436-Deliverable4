@@ -73,46 +73,88 @@ const Cart = {
 //  ORDERS
 // ─────────────────────────────────────────────
 const Orders = {
-    _key: 'orders',
-
-    get() {
-        return JSON.parse(localStorage.getItem(this._key) || '[]');
-    },
-    save(orders) {
-        localStorage.setItem(this._key, JSON.stringify(orders));
-    },
-
-    create(orderData) {
-        const orders = this.get();
-        const order = {
-            id: 'ORD-' + Date.now(),
-            createdAt: new Date().toISOString(),
-            status: 'pending',
-            ...orderData
-        };
-        orders.unshift(order);
-        this.save(orders);
-        // Track for analytics
-        Analytics.recordOrder(order);
-        return order;
+    async get() {
+        try {
+            return await getOrders();
+        } catch (error) {
+            console.error('Failed to fetch orders:', error);
+            return [];
+        }
     },
 
-    getById(id) {
-        return this.get().find(o => o.id === id) || null;
+    async create(orderData) {
+        try {
+            // Transform cart items to order items format
+            const items = Cart.get().map(item => ({
+                id: item.id,
+                name: item.name,
+                price: parseFloat(item.price),
+                quantity: item.qty
+            }));
+
+            const orderPayload = {
+                name: orderData.customer.name,
+                email: orderData.customer.email,
+                phone: orderData.customer.phone,
+                order_type: orderData.delivery.method === 'delivery' ? 'delivery' : 'pickup',
+                total_amount: Cart.total(orderData.delivery.method === 'delivery' ? 5.00 : 0),
+                items: items,
+                address: orderData.customer.address || '',
+                city: orderData.customer.city || '',
+                state: orderData.customer.state || '',
+                zip_code: orderData.customer.zipCode || '',
+                estimated_time: Orders.calcETA(orderData.delivery.method)
+            };
+
+            const result = await createOrder(orderPayload);
+
+            // Clear cart after successful order
+            Cart.clear();
+
+            // Track for analytics (still using localStorage for now)
+            Analytics.recordOrder({
+                id: result.order_id,
+                total: orderPayload.total_amount,
+                items: items.length,
+                type: orderPayload.order_type
+            });
+
+            return {
+                id: result.order_id,
+                ...orderPayload,
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Failed to create order:', error);
+            throw error;
+        }
     },
 
-    updateStatus(id, status) {
-        const orders = this.get().map(o => o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o);
-        this.save(orders);
+    async getById(id) {
+        const orders = await this.get();
+        return orders.find(o => o.order_id == id) || null;
     },
 
-    getByDate(dateStr) {
-        return this.get().filter(o => o.createdAt.startsWith(dateStr));
+    async updateStatus(id, status) {
+        try {
+            await updateOrderStatus(id, status);
+            // Dispatch event for UI updates
+            window.dispatchEvent(new Event('orders-updated'));
+        } catch (error) {
+            console.error('Failed to update order status:', error);
+            throw error;
+        }
     },
 
-    todayOrders() {
+    async getByDate(dateStr) {
+        const orders = await this.get();
+        return orders.filter(o => o.order_date.startsWith(dateStr));
+    },
+
+    async todayOrders() {
         const today = new Date().toISOString().slice(0, 10);
-        return this.getByDate(today);
+        return await this.getByDate(today);
     },
 
     // ETA calculation (minutes from now)
