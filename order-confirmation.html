@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Confirmation - Restaurant Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- HEADER / NAV -->
+<header class="site-header mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">🍽 Restaurant Store</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                    aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Menu</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="cart.html">🛒 Cart <span class="badge bg-danger" id="cart-count" style="display:none;"></span></a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="container mb-5">
+    <div id="confirmation-content">
+        <!-- Populated by JS -->
+    </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer py-3 mt-auto">
+    <div class="container text-center">
+        <p class="mb-0">&copy; <span id="footer-year"></span> Restaurant Store. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+
+<script>
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+function getQueryParams() {
+    const params = {};
+    new URLSearchParams(window.location.search).forEach((v, k) => { params[k] = v; });
+    return params;
+}
+
+function getOrder(orderId) {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    return orders.find(o => o.id === orderId) || null;
+}
+
+function renderConfirmation() {
+    const params = getQueryParams();
+    const orderId = params.order_id;
+    const contentDiv = document.getElementById('confirmation-content');
+    
+    if (!orderId) {
+        contentDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <h4 class="alert-heading">Order Not Found</h4>
+                <p>No order information was found. This might happen if you refreshed the page or the order was not properly saved.</p>
+                <hr>
+                <p class="mb-0">Please try placing your order again or contact us if you believe this is an error.</p>
+                <a href="index.html" class="btn btn-primary mt-3">Return to Menu</a>
+            </div>
+        `;
+        updateCartCount();
+        return;
+    }
+    
+    const order = getOrder(orderId);
+    
+    if (!order) {
+        contentDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <h4 class="alert-heading">Order Not Found</h4>
+                <p>The order with ID "${orderId}" could not be found. This might happen if the order was cancelled or there's a system issue.</p>
+                <hr>
+                <p class="mb-0">Please contact us if you believe this is an error or try placing a new order.</p>
+                <a href="index.html" class="btn btn-primary mt-3">Return to Menu</a>
+            </div>
+        `;
+        updateCartCount();
+        return;
+    }
+    
+    const orderDate = new Date(order.createdAt).toLocaleString();
+    const eta = order.eta || (order.deliveryType === 'delivery' ? '35-45 minutes' : '20-30 minutes');
+    const deliveryText = order.deliveryType === 'delivery' ? 'Delivery' : 'Pickup';
+    const paymentText = order.paymentType === 'card' ? 'Credit/Debit Card' : 'Cash';
+    
+    let itemsHtml = '';
+    order.items.forEach(item => {
+        const subtotal = (parseFloat(item.price) * item.qty).toFixed(2);
+        itemsHtml += `
+            <tr>
+                <td>${esc(item.name)}</td>
+                <td>x${item.qty}</td>
+                <td>$${parseFloat(item.price).toFixed(2)}</td>
+                <td>$${subtotal}</td>
+            </tr>
+        `;
+    });
+    
+    const html = `
+        <div class="row">
+            <div class="col-md-8">
+                <div class="alert alert-success d-flex align-items-center">
+                    <div style="font-size: 2rem; margin-right: 1rem;">✓</div>
+                    <div>
+                        <h4 class="mb-0">Order Confirmed!</h4>
+                        <p class="mb-0">Thank you for your order. Your order has been successfully placed.</p>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Order Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Order ID:</strong><br>
+                                <code>${esc(order.id)}</code>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Order Time:</strong><br>
+                                ${orderDate}
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Items Ordered:</h6>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${itemsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Delivery Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Customer Name:</strong><br>
+                            ${esc(order.customer.name)}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Phone:</strong><br>
+                            ${esc(order.customer.phone)}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Email:</strong><br>
+                            ${esc(order.customer.email)}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Delivery Address:</strong><br>
+                            ${esc(order.customer.address)}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Delivery Method:</strong><br>
+                            ${deliveryText}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Payment Method:</strong><br>
+                            ${paymentText}
+                        </div>
+                        ${order.pickupTime && order.pickupTime !== 'asap' ? `
+                        <div class="mb-3">
+                            <strong>Preferred Time:</strong><br>
+                            ${order.pickupTime.replace('min', ' minutes')}
+                        </div>
+                        ` : ''}
+                        <div>
+                            <strong>Estimated Time:</strong><br>
+                            ${eta}
+                        </div>
+                    </div>
+                </div>
+
+                ${order.notes ? `
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Special Instructions</h5>
+                    </div>
+                    <div class="card-body">
+                        ${esc(order.notes)}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+
+            <div class="col-md-4">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 p-3 bg-light rounded">
+                            <h6 class="mb-2">Estimated Time:</h6>
+                            <p class="mb-0"><strong>${eta}</strong></p>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span>$${order.subtotal.toFixed(2)}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax (8%):</span>
+                            <span>$${order.tax.toFixed(2)}</span>
+                        </div>
+                        ${order.deliveryFee > 0 ? `
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Delivery Fee:</span>
+                            <span>$${order.deliveryFee.toFixed(2)}</span>
+                        </div>
+                        ` : ''}
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3" style="font-size: 1.1rem; font-weight: bold;">
+                            <span>Total:</span>
+                            <span>$${order.total.toFixed(2)}</span>
+                        </div>
+                        <a href="index.html" class="btn btn-primary w-100 mb-2">Continue Shopping</a>
+                        <a href="contact.html" class="btn btn-outline-secondary w-100">Contact Us</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    contentDiv.innerHTML = html;
+    updateCartCount();
+}
+
+function esc(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function updateCartCount() {
+    const count = Cart.count();
+    const badge = document.getElementById('cart-count');
+    if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = '';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// Initialize
+renderConfirmation();
+</script>
+
+</body>
+</html>

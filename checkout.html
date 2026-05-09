@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Checkout - Restaurant Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- HEADER / NAV -->
+<header class="site-header mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">🍽 Restaurant Store</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                    aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Menu</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="cart.html">🛒 Cart <span class="badge bg-danger" id="cart-count" style="display:none;"></span></a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="container mb-5">
+    <h1 class="mb-4">Checkout</h1>
+
+    <div class="row">
+        <!-- Customer Information and Order Form -->
+        <div class="col-md-8">
+            <form id="checkout-form" novalidate>
+                <!-- Customer Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Delivery Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full Name *</label>
+                            <input type="text" id="name" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" id="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone Number *</label>
+                            <input type="tel" id="phone" name="phone" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Delivery Address *</label>
+                            <textarea id="address" name="address" class="form-control" rows="3" required></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Type -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Delivery Method</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="delivery" id="delivery-pickup" value="pickup" checked>
+                            <label class="form-check-label" for="delivery-pickup">
+                                Pickup (Ready in ~20 min)
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="delivery" id="delivery-delivery" value="delivery">
+                            <label class="form-check-label" for="delivery-delivery">
+                                Delivery ($5.00) (Ready in ~35 min)
+                            </label>
+                        </div>
+                        
+                        <!-- Pickup Time Selection -->
+                        <div id="pickup-time-section" class="mb-3">
+                            <label for="pickup-time" class="form-label">Preferred Pickup Time</label>
+                            <select id="pickup-time" name="pickup-time" class="form-control">
+                                <option value="asap">ASAP (Ready in ~20 min)</option>
+                                <option value="15min">In 15 minutes</option>
+                                <option value="30min">In 30 minutes</option>
+                                <option value="45min">In 45 minutes</option>
+                                <option value="60min">In 1 hour</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Payment Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment" id="payment-card" value="card" checked>
+                            <label class="form-check-label" for="payment-card">
+                                Credit/Debit Card
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment" id="payment-cash" value="cash">
+                            <label class="form-check-label" for="payment-cash">
+                                Cash (Pickup Only)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Notes -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Special Instructions (Optional)</h5>
+                    </div>
+                    <div class="card-body">
+                        <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Add any special requests..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Alerts -->
+                <div id="checkout-alert" style="display: none;"></div>
+            </form>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-md-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div id="checkout-items" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
+                        <!-- Items populated by JS -->
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span id="checkout-subtotal">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax (8%):</span>
+                        <span id="checkout-tax">$0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Delivery:</span>
+                        <span id="checkout-delivery">$0.00</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3" style="font-size: 1.1rem; font-weight: bold;">
+                        <span>Total:</span>
+                        <span id="checkout-total">$0.00</span>
+                    </div>
+                    <button type="submit" form="checkout-form" class="btn btn-success w-100 mb-2">Place Order</button>
+                    <a href="cart.html" class="btn btn-outline-secondary w-100">Back to Cart</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer py-3 mt-auto">
+    <div class="container text-center">
+        <p class="mb-0">&copy; <span id="footer-year"></span> Restaurant Store. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+
+<script>
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+let currentDeliveryFee = 0;
+
+function renderCheckoutItems() {
+    const items = Cart.get();
+    const itemsDiv = document.getElementById('checkout-items');
+    
+    if (items.length === 0) {
+        itemsDiv.innerHTML = '<p class="text-muted">Your cart is empty. <a href="index.html">Continue shopping</a></p>';
+        return;
+    }
+
+    let html = '<div>';
+    items.forEach(item => {
+        const subtotal = (parseFloat(item.price) * item.qty).toFixed(2);
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span>${esc(item.name)} x${item.qty}</span>
+                <span>$${subtotal}</span>
+            </div>
+        `;
+    });
+    html += '</div>';
+    itemsDiv.innerHTML = html;
+    updateCheckoutTotals();
+}
+
+function updateCheckoutTotals() {
+    const items = Cart.get();
+    const subtotal = items.reduce((sum, i) => sum + parseFloat(i.price) * i.qty, 0);
+    const tax = subtotal * 0.08;
+    const total = subtotal + tax + currentDeliveryFee;
+    
+    document.getElementById('checkout-subtotal').textContent = '$' + subtotal.toFixed(2);
+    document.getElementById('checkout-tax').textContent = '$' + tax.toFixed(2);
+    document.getElementById('checkout-delivery').textContent = '$' + currentDeliveryFee.toFixed(2);
+    document.getElementById('checkout-total').textContent = '$' + total.toFixed(2);
+}
+
+function updateCartCount() {
+    const count = Cart.count();
+    const badge = document.getElementById('cart-count');
+    if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = '';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// Delivery method change handler
+document.querySelectorAll('input[name="delivery"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        currentDeliveryFee = e.target.value === 'delivery' ? 5.00 : 0;
+        updateCheckoutTotals();
+        
+        // Show/hide pickup time section
+        const pickupSection = document.getElementById('pickup-time-section');
+        pickupSection.style.display = e.target.value === 'pickup' ? 'block' : 'none';
+        
+        // Show/hide address field
+        const addressField = document.getElementById('address').closest('.mb-3');
+        addressField.style.display = e.target.value === 'delivery' ? 'block' : 'none';
+        document.getElementById('address').required = e.target.value === 'delivery';
+    });
+});
+
+// Payment method change handler
+document.querySelectorAll('input[name="payment"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        // If cash selected but delivery chosen, warn user
+        if (e.target.value === 'cash' && document.querySelector('input[name="delivery"]:checked').value === 'delivery') {
+            showAlert('Cash payment is only available for pickup orders.', 'warning');
+            setTimeout(() => {
+                document.getElementById('payment-card').checked = true;
+            }, 3000);
+        }
+    });
+});
+
+// Form submission
+document.getElementById('checkout-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const deliveryType = document.querySelector('input[name="delivery"]:checked').value;
+    const paymentType = document.querySelector('input[name="payment"]:checked').value;
+    const pickupTime = document.getElementById('pickup-time').value;
+    const notes = document.getElementById('notes').value.trim();
+    
+    const items = Cart.get();
+    
+    // Validation
+    if (!name || !email || !phone) {
+        showAlert('Please fill in all required fields.', 'danger');
+        return;
+    }
+    
+    if (!isValidEmail(email)) {
+        showAlert('Please enter a valid email address.', 'danger');
+        return;
+    }
+    
+    if (deliveryType === 'delivery' && !address) {
+        showAlert('Please enter a delivery address.', 'danger');
+        return;
+    }
+    
+    if (deliveryType === 'delivery' && !isValidAddress(address)) {
+        showAlert('Please enter a valid delivery address (must be at least 10 characters and contain a street number).', 'danger');
+        return;
+    }
+    
+    if (paymentType === 'cash' && deliveryType === 'delivery') {
+        showAlert('Cash payment is only available for pickup orders.', 'danger');
+        return;
+    }
+    
+    if (items.length === 0) {
+        showAlert('Your cart is empty.', 'danger');
+        return;
+    }
+    
+    // Create order
+    const subtotal = items.reduce((sum, i) => sum + parseFloat(i.price) * i.qty, 0);
+    const tax = subtotal * 0.08;
+    const deliveryFee = deliveryType === 'delivery' ? 5.00 : 0;
+    const total = subtotal + tax + deliveryFee;
+    
+    const order = {
+        id: 'ORD-' + Date.now(),
+        customer: { name, email, phone, address },
+        items,
+        subtotal,
+        tax,
+        deliveryFee,
+        total,
+        deliveryType,
+        paymentType,
+        pickupTime,
+        notes,
+        createdAt: new Date().toISOString(),
+        status: 'pending',
+        eta: calculateETA(deliveryType, pickupTime)
+    };
+    
+    // Save order
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    orders.unshift(order);
+    localStorage.setItem('orders', JSON.stringify(orders));
+    
+    // Clear cart
+    Cart.clear();
+    
+    // Redirect to confirmation
+    localStorage.setItem('lastOrderId', order.id);
+    window.location.href = 'order-confirmation.html?order_id=' + order.id;
+});
+
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidAddress(address) {
+    // Basic validation: at least 10 characters and contains a number (street number)
+    return address.length >= 10 && /\d/.test(address);
+}
+
+function calculateETA(deliveryType, pickupTime) {
+    const now = new Date();
+    let minutes = deliveryType === 'delivery' ? 35 : 20;
+    
+    if (pickupTime !== 'asap') {
+        const additionalMinutes = parseInt(pickupTime.replace('min', ''));
+        minutes += additionalMinutes;
+    }
+    
+    now.setMinutes(now.getMinutes() + minutes);
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.getElementById('checkout-alert');
+    alertDiv.className = 'alert alert-' + type;
+    alertDiv.textContent = message;
+    alertDiv.style.display = '';
+}
+
+// Initialize
+renderCheckoutItems();
+updateCartCount();
+window.addEventListener('cart-updated', () => {
+    renderCheckoutItems();
+    updateCartCount();
+});
+</script>
+
+</body>
+</html>

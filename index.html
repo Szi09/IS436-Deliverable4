@@ -65,21 +65,24 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
   <div class="container">
     <a class="navbar-brand" href="index.html">🍽 Restaurant Store</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+            aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
+    <div class="collapse navbar-collapse" id="mainNavbar">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
         <li class="nav-item"><a class="nav-link active" href="index.html">Home</a></li>
-        <!-- Add other nav links here as needed -->
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="cartDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            🛒 Cart
+          <a class="nav-link dropdown-toggle" href="#" id="navbarMenuDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Menu
           </a>
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="cartDropdown">
-            <li><a class="dropdown-item" href="cart.html">View Cart</a></li>
+          <ul class="dropdown-menu" id="menu-category-dropdown" aria-labelledby="navbarMenuDropdown">
+            <li><a class="dropdown-item" href="#" data-id="0">All Categories</a></li>
+            <!-- Categories populated by JS -->
           </ul>
         </li>
+        <li class="nav-item"><a class="nav-link" href="contact.html">Contact Us</a></li>
+        <li class="nav-item"><a class="nav-link" href="cart.html">🛒 Cart <span class="badge bg-danger" id="cart-count" style="display:none;"></span></a></li>
       </ul>
     </div>
   </div>
@@ -108,17 +111,8 @@
   <div id="search-banner" class="alert alert-info d-none"></div>
 
   <div class="row">
-    <!-- Category sidebar -->
-    <div class="col-md-3 mb-4">
-      <h5 class="mb-3">Categories</h5>
-      <ul class="list-group" id="category-list">
-        <li class="list-group-item list-group-item-action active" data-id="0">All Categories</li>
-        <!-- Populated by JS -->
-      </ul>
-    </div>
-
     <!-- Product grid -->
-    <div class="col-md-9">
+    <div class="col-12">
       <div id="loading" class="text-center py-5">
         <div class="spinner-border text-primary" role="status"></div>
         <p class="mt-2 text-muted">Loading products…</p>
@@ -136,35 +130,16 @@
 <footer>
   <div class="container text-center">
     <p class="mb-0">&copy; <span id="year"></span> Restaurant Store. All rights reserved.</p>
+    <p class="mb-0"><a href="admin_login.html">Admin Login</a></p>
   </div>
 </footer>
 
 <!-- Bootstrap JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
 
 <script>
-/* ══════════════════════════════════════════════════════════════
-   DATA LAYER
-   ─────────────────────────────────────────────────────────────
-   Previously this came from PHP + PDO querying MySQL.
-   Now it is loaded from  products.json  (a static file you
-   export from MySQL Workbench — see README below).
-
-   products.json shape expected:
-   [
-     {
-       "id": 1,
-       "name": "Margherita Pizza",
-       "description": "Classic tomato and mozzarella.",
-       "price": "12.99",
-       "image_name": "margherita.jpg",
-       "category_id": 2,
-       "category_name": "Pizza"
-     },
-     …
-   ]
-══════════════════════════════════════════════════════════════ */
-
 document.getElementById('year').textContent = new Date().getFullYear();
 
 let allProducts   = [];   // full dataset loaded once
@@ -181,17 +156,14 @@ function renderCategories(products) {
     }
   });
 
-  const list = document.getElementById('category-list');
-  // Keep "All" item, remove old dynamically added items
-  while (list.children.length > 1) list.removeChild(list.lastChild);
+  const dropdown = document.getElementById('menu-category-dropdown');
+  // Keep "All Categories" item, remove old dynamically added items
+  while (dropdown.children.length > 1) dropdown.removeChild(dropdown.lastChild);
 
   seen.forEach((name, id) => {
     const li = document.createElement('li');
-    li.className = 'list-group-item list-group-item-action';
-    li.dataset.id = id;
-    li.textContent = name;
-    li.addEventListener('click', () => selectCategory(id));
-    list.appendChild(li);
+    li.innerHTML = `<a class="dropdown-item" href="#" data-id="${id}">${escHtml(name)}</a>`;
+    dropdown.appendChild(li);
   });
 }
 
@@ -223,8 +195,11 @@ function renderProducts(products) {
           <h5 class="card-title">${escHtml(p.name)}</h5>
           ${catHtml}
           <p class="card-text flex-grow-1">${escHtml(desc)}…</p>
-          <p class="fw-bold mb-2">$${price}</p>
-          <a href="product_detail.html?id=${encodeURIComponent(p.id)}" class="btn btn-primary mt-auto">View Details</a>
+          <p class="fw-bold mb-3">$${price}</p>
+          <div class="d-flex gap-2 mt-auto">
+            <button class="btn btn-success btn-sm flex-grow-1" data-id="${p.id}" data-name="${escHtml(p.name)}" data-price="${price}" onclick="quickAddToCart(this)">Add to Cart</button>
+            <a href="product_detail.html?id=${encodeURIComponent(p.id)}" class="btn btn-primary btn-sm flex-grow-1">Details</a>
+          </div>
         </div>
       </div>`;
     grid.appendChild(col);
@@ -260,10 +235,6 @@ function applyFilters() {
 
 function selectCategory(id) {
   activeCategory = id;
-  // Update active class on sidebar
-  document.querySelectorAll('#category-list .list-group-item').forEach(li => {
-    li.classList.toggle('active', parseInt(li.dataset.id) === id);
-  });
   applyFilters();
 }
 
@@ -281,14 +252,12 @@ document.getElementById('clear-btn').addEventListener('click', () => {
   applyFilters();
 });
 
-document.getElementById('category-list').addEventListener('click', e => {
-  const li = e.target.closest('.list-group-item');
-  if (!li) return;
-  selectCategory(parseInt(li.dataset.id));
+document.getElementById('menu-category-dropdown').addEventListener('click', e => {
+  e.preventDefault();
+  const link = e.target.closest('.dropdown-item');
+  if (!link) return;
+  selectCategory(parseInt(link.dataset.id));
 });
-
-/* ── Bootstrap: "All Categories" click ───────────────────── */
-document.querySelector('#category-list .list-group-item').addEventListener('click', () => selectCategory(0));
 
 /* ── Utility ──────────────────────────────────────────────── */
 function escHtml(str) {
@@ -299,24 +268,22 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-/* ── Load products.json ───────────────────────────────────── */
+/* ── Load products from API ───────────────────────────────────── */
 async function loadProducts() {
   document.getElementById('loading').style.display = 'block';
   try {
-    const res = await fetch('products.json');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    allProducts = await res.json();
-    // Sort by name (mirrors ORDER BY p.name in original SQL)
+    allProducts = await getProducts();
+    // Sort by name
     allProducts.sort((a, b) => a.name.localeCompare(b.name));
     renderCategories(allProducts);
     applyFilters();
   } catch (err) {
-    console.error('Could not load products.json:', err);
+    console.error('Could not load products from API:', err);
     document.getElementById('product-grid').innerHTML = `
       <div class="col-12">
         <div class="alert alert-danger">
           <strong>Could not load product data.</strong><br>
-          Make sure <code>products.json</code> is in the same folder as this file.<br>
+          Please check that the API is running and accessible.<br>
           <small class="text-muted">${escHtml(err.message)}</small>
         </div>
       </div>`;
@@ -326,6 +293,38 @@ async function loadProducts() {
 }
 
 loadProducts();
+
+function quickAddToCart(button) {
+  const id = Number(button.dataset.id);
+  const name = button.dataset.name;
+  const price = button.dataset.price;
+  Cart.add({ id, name, price, qty: 1 });
+  updateCartCount();
+  const originalText = button.textContent;
+  button.textContent = '✓ Added';
+  button.classList.add('disabled');
+  setTimeout(() => {
+    button.textContent = originalText;
+    button.classList.remove('disabled');
+  }, 1500);
+}
+
+function updateCartCount() {
+  const count = Cart.count();
+  const badge = document.getElementById('cart-count');
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Listen for cart updates
+window.addEventListener('cart-updated', updateCartCount);
+
+// Initialize cart count on page load
+setTimeout(updateCartCount, 100);
 </script>
 
 <!--

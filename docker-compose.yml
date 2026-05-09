@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: restaurant_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: restaurant_db
+      MYSQL_USER: restaurant_user
+      MYSQL_PASSWORD: restaurant_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./deliverable4_mysql.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - restaurant_network
+    command: --default-authentication-plugin=mysql_native_password
+
+  web:
+    build: .
+    container_name: restaurant_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    environment:
+      DB_HOST: mysql
+      DB_NAME: restaurant_db
+      DB_USER: restaurant_user
+      DB_PASS: restaurant_pass
+    volumes:
+      - .:/var/www/html
+    networks:
+      - restaurant_network
+
+volumes:
+  mysql_data:
+
+networks:
+  restaurant_network:
+    driver: bridge

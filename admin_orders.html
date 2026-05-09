@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Management - Restaurant Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- HEADER / NAV -->
+<header class="site-header mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="admin_dashboard.html">🍽 Admin Panel</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                    aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="admin_dashboard.html">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="admin_orders.html">Orders</a></li>
+                    <li class="nav-item"><a class="nav-link" href="admin_products.html">Products</a></li>
+                    <li class="nav-item"><a class="nav-link" href="admin_contacts.html">Contacts</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="container mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Order Management</h1>
+        <button class="btn btn-primary" onclick="refreshOrders()">Refresh</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="status-filter" class="form-label">Status</label>
+                    <select class="form-select" id="status-filter">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="preparing">Preparing</option>
+                        <option value="ready">Ready</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="picked_up">Picked Up</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date-filter" class="form-label">Date</label>
+                    <input type="date" class="form-control" id="date-filter">
+                </div>
+                <div class="col-md-3">
+                    <label for="search-filter" class="form-label">Customer Name</label>
+                    <input type="text" class="form-control" id="search-filter" placeholder="Search by name...">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">Clear Filters</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="card">
+        <div class="card-body">
+            <div id="orders-container">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Loading orders...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="order-details">
+                <!-- Order details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="update-status-btn">Update Status</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="site-footer py-3 mt-auto">
+    <div class="container text-center">
+        <p class="mb-0">&copy; <span id="footer-year"></span> Restaurant Store - Admin Panel</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+
+<script>
+document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+let allOrders = [];
+let currentOrderId = null;
+
+async function loadOrders() {
+    try {
+        allOrders = await Orders.get();
+        renderOrders(allOrders);
+    } catch (error) {
+        console.error('Failed to load orders:', error);
+        allOrders = [];
+        renderOrders([]);
+    }
+}
+
+function renderOrders(orders) {
+    const container = document.getElementById('orders-container');
+    
+    if (orders.length === 0) {
+        container.innerHTML = '<div class="text-center py-5"><p class="text-muted">No orders found</p></div>';
+        return;
+    }
+
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    orders.forEach(order => {
+        const date = new Date(order.order_date).toLocaleDateString();
+        const time = new Date(order.order_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const statusClass = getStatusClass(order.status);
+
+        html += `
+            <tr>
+                <td>${order.order_id}</td>
+                <td>Customer #${order.user_id}</td>
+                <td>$${parseFloat(order.total_amount).toFixed(2)}</td>
+                <td><span class="badge bg-${statusClass}">${order.status.toUpperCase()}</span></td>
+                <td>${date}<br><small class="text-muted">${time}</small></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewOrder('${order.order_id}')">View</button>
+                    <div class="dropdown d-inline">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            Status
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.order_id}', 'confirmed')">Confirmed</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.order_id}', 'preparing')">Preparing</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.order_id}', 'ready')">Ready</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.order_id}', 'delivered')">Delivered</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.order_id}', 'picked_up')">Picked Up</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="updateOrderStatus('${order.order_id}', 'cancelled')">Cancel</a></li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+async function viewOrder(orderId) {
+    const order = allOrders.find(o => o.order_id == orderId);
+    if (!order) return;
+
+    currentOrderId = orderId;
+
+    const date = new Date(order.order_date).toLocaleString();
+    const deliveryText = order.order_type === 'delivery' ? 'Delivery' : 'Pickup';
+
+    let itemsHtml = '';
+    // For now, show basic order info since detailed items are in separate table
+    itemsHtml = `
+        <tr>
+            <td>Order #${order.order_id}</td>
+            <td>${deliveryText}</td>
+            <td>$${parseFloat(order.total_amount).toFixed(2)}</td>
+            <td>${order.status}</td>
+        </tr>
+    `;
+
+    const detailsHtml = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Order Information</h6>
+                <p><strong>Order ID:</strong> ${order.order_id}</p>
+                <p><strong>Date:</strong> ${date}</p>
+                <p><strong>Status:</strong> <span class="badge bg-${getStatusClass(order.status)}">${order.status.toUpperCase()}</span></p>
+                <p><strong>Delivery Method:</strong> ${deliveryText}</p>
+                <p><strong>Total Amount:</strong> $${parseFloat(order.total_amount).toFixed(2)}</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Customer Information</h6>
+                <p><strong>Customer ID:</strong> ${order.user_id}</p>
+                ${order.address ? `<p><strong>Address:</strong> ${esc(order.address)}</p>` : ''}
+                ${order.city ? `<p><strong>City:</strong> ${esc(order.city)}</p>` : ''}
+                ${order.state ? `<p><strong>State:</strong> ${esc(order.state)}</p>` : ''}
+                ${order.zip_code ? `<p><strong>ZIP Code:</strong> ${esc(order.zip_code)}</p>` : ''}
+            </div>
+        </div>
+        <hr>
+        <h6>Order Items</h6>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsHtml}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3">Total</th>
+                        <th><strong>$${parseFloat(order.total_amount).toFixed(2)}</strong></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+
+    document.getElementById('order-details').innerHTML = detailsHtml;
+    new bootstrap.Modal(document.getElementById('orderModal')).show();
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+    try {
+        await Orders.updateStatus(orderId, newStatus);
+        // Reload orders to reflect changes
+        await loadOrders();
+        // Close modal if open
+        const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
+        if (modal) modal.hide();
+    } catch (error) {
+        console.error('Failed to update order status:', error);
+        alert('Failed to update order status. Please try again.');
+    }
+}
+        
+        showAlert(`Order status updated to ${newStatus}`, 'success');
+    }
+}
+
+function applyFilters() {
+    let filtered = [...allOrders];
+    
+    const statusFilter = document.getElementById('status-filter').value;
+    const dateFilter = document.getElementById('date-filter').value;
+    const searchFilter = document.getElementById('search-filter').value.toLowerCase();
+    
+    if (statusFilter) {
+        filtered = filtered.filter(order => order.status === statusFilter);
+    }
+    
+    if (dateFilter) {
+        filtered = filtered.filter(order => order.createdAt.startsWith(dateFilter));
+    }
+    
+    if (searchFilter) {
+        filtered = filtered.filter(order => 
+            order.customer.name.toLowerCase().includes(searchFilter) ||
+            order.customer.email.toLowerCase().includes(searchFilter)
+        );
+    }
+    
+    return filtered;
+}
+
+function clearFilters() {
+    document.getElementById('status-filter').value = '';
+    document.getElementById('date-filter').value = '';
+    document.getElementById('search-filter').value = '';
+    renderOrders(allOrders);
+}
+
+function refreshOrders() {
+    loadOrders();
+    showAlert('Orders refreshed', 'info');
+}
+
+function getStatusClass(status) {
+    switch (status) {
+        case 'pending': return 'warning';
+        case 'confirmed': return 'info';
+        case 'preparing': return 'primary';
+        case 'ready': return 'success';
+        case 'delivered': return 'success';
+        case 'picked_up': return 'success';
+        case 'cancelled': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 3000);
+}
+
+function esc(str) {
+    if (str == null) return '';
+    return String(str).replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[m]));
+}
+
+// Event listeners for filters
+document.getElementById('status-filter').addEventListener('change', () => renderOrders(applyFilters()));
+document.getElementById('date-filter').addEventListener('change', () => renderOrders(applyFilters()));
+document.getElementById('search-filter').addEventListener('input', () => renderOrders(applyFilters()));
+
+// Load orders on page load
+loadOrders();
+</script>
+
+</body>
+</html>

@@ -12,33 +12,21 @@
 
 <!-- HEADER / NAV -->
 <header class="site-header mb-4">
-    <nav class="navbar navbar-expand-lg navbar-light container">
-        <a class="navbar-brand fw-bold" href="index.html">Restaurant Store</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
-                aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="mainNavbar">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.html">Home</a>
-                </li>
-                <li class="nav-item dropdown" id="nav-category-item" style="display:none;">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarCategoryDropdown"
-                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Menu Categories
-                    </a>
-                    <ul class="dropdown-menu" id="nav-category-menu" aria-labelledby="navbarCategoryDropdown"></ul>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="contact.html">Contact</a>
-                </li>
-            </ul>
-            <form class="d-flex" id="search-form">
-                <input class="form-control me-2" type="search" id="search-input"
-                       name="q" placeholder="Search dishes..." aria-label="Search">
-                <button class="btn btn-outline-primary" type="submit">Search</button>
-            </form>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">🍽 Restaurant Store</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                    aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html">Menu</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="cart.html">🛒 Cart <span class="badge bg-danger" id="cart-count" style="display:none;"></span></a></li>
+                </ul>
+            </div>
         </div>
     </nav>
 </header>
@@ -60,34 +48,17 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/data.js"></script>
-<script src="js/main.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
 
 <script>
 document.getElementById('footer-year').textContent = new Date().getFullYear();
 
-document.getElementById('search-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const q = document.getElementById('search-input').value.trim();
-    window.location.href = 'index.html' + (q ? '?q=' + encodeURIComponent(q) : '');
-});
-
-function renderCategoryNav(categories) {
-    if (!categories.length) return;
-    const item = document.getElementById('nav-category-item');
-    const menu = document.getElementById('nav-category-menu');
-    item.style.display = '';
-    categories.forEach(cat => {
-        const li = document.createElement('li');
-        li.innerHTML = `<a class="dropdown-item" href="index.html?category_id=${encodeURIComponent(cat.id)}">${esc(cat.name)}</a>`;
-        menu.appendChild(li);
-    });
-}
+let currentProduct = null;
+let selectedQty = 1;
 
 (async function init() {
     await loadAndApplySiteSettings();
-    const categories = await getAllCategories();
-    renderCategoryNav(categories);
 
     const params = getQueryParams();
     const id = params['id'] ? parseInt(params['id']) : 0;
@@ -104,6 +75,8 @@ function renderCategoryNav(categories) {
         content.innerHTML = '<div class="alert alert-danger">Product not found.</div>';
         return;
     }
+
+    currentProduct = product;
 
     /* Mirrors the PHP product_detail.php HTML exactly */
     const imgHtml = product.image_name
@@ -124,10 +97,64 @@ function renderCategoryNav(categories) {
                 ${catHtml}
                 <p><strong>Price:</strong> $${parseFloat(product.price).toFixed(2)}</p>
                 <p>${desc}</p>
-                <a href="index.html" class="btn btn-secondary">Back to Menu</a>
+                <div class="mt-4">
+                    <label for="qty" class="form-label"><strong>Quantity:</strong></label>
+                    <div class="input-group mb-3" style="max-width: 150px;">
+                        <button class="btn btn-outline-secondary" type="button" id="qty-minus">−</button>
+                        <input type="number" id="qty" class="form-control text-center" value="1" min="1" max="99">
+                        <button class="btn btn-outline-secondary" type="button" id="qty-plus">+</button>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-success" onclick="addToCart()">Add to Cart</button>
+                    <a href="index.html" class="btn btn-secondary">Back to Menu</a>
+                </div>
             </div>
         </div>`;
+    
+    // Setup quantity controls
+    const qtyInput = document.getElementById('qty');
+    document.getElementById('qty-minus').addEventListener('click', () => {
+        const val = parseInt(qtyInput.value) || 1;
+        if (val > 1) qtyInput.value = val - 1;
+    });
+    document.getElementById('qty-plus').addEventListener('click', () => {
+        const val = parseInt(qtyInput.value) || 1;
+        if (val < 99) qtyInput.value = val + 1;
+    });
+    qtyInput.addEventListener('change', () => {
+        let val = parseInt(qtyInput.value) || 1;
+        if (val < 1) val = 1;
+        if (val > 99) val = 99;
+        qtyInput.value = val;
+        selectedQty = val;
+    });
 })();
+
+function addToCart() {
+    if (!currentProduct) return;
+    const qty = parseInt(document.getElementById('qty').value) || 1;
+    for (let i = 0; i < qty; i++) {
+        Cart.add(currentProduct);
+    }
+    updateCartCount();
+    alert(currentProduct.name + ' x' + qty + ' has been added to your cart!');
+}
+
+function updateCartCount() {
+    const count = Cart.count();
+    const badge = document.getElementById('cart-count');
+    if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = '';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// Initialize cart count
+setTimeout(updateCartCount, 100);
+window.addEventListener('cart-updated', updateCartCount);
 </script>
 </body>
 </html>
