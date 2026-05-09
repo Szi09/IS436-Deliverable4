@@ -12,29 +12,21 @@
 
 <!-- HEADER / NAV -->
 <header class="site-header mb-4">
-    <nav class="navbar navbar-expand-lg navbar-light container">
-        <a class="navbar-brand fw-bold" href="index.html">Restaurant Store</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
-                aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="mainNavbar">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
-                <li class="nav-item dropdown" id="nav-category-item" style="display:none;">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarCategoryDropdown"
-                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Menu Categories
-                    </a>
-                    <ul class="dropdown-menu" id="nav-category-menu" aria-labelledby="navbarCategoryDropdown"></ul>
-                </li>
-                <li class="nav-item"><a class="nav-link active" href="contact.html">Contact</a></li>
-            </ul>
-            <form class="d-flex" id="search-form">
-                <input class="form-control me-2" type="search" id="search-input"
-                       name="q" placeholder="Search dishes..." aria-label="Search">
-                <button class="btn btn-outline-primary" type="submit">Search</button>
-            </form>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">🍽 Restaurant Store</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                    aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Menu</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="contact.html">Contact Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="cart.html">🛒 Cart <span class="badge bg-danger" id="cart-count" style="display:none;"></span></a></li>
+                </ul>
+            </div>
         </div>
     </nav>
 </header>
@@ -107,17 +99,11 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/data.js"></script>
-<script src="js/main.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
 
 <script>
 document.getElementById('footer-year').textContent = new Date().getFullYear();
-
-document.getElementById('search-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const q = document.getElementById('search-input').value.trim();
-    window.location.href = 'index.html' + (q ? '?q=' + encodeURIComponent(q) : '');
-});
 
 /* Validate email — mirrors filter_var($email, FILTER_VALIDATE_EMAIL) */
 function isValidEmail(email) {
@@ -164,20 +150,19 @@ document.getElementById('contact-form').addEventListener('submit', function (e) 
     document.getElementById('contact-form').reset();
 });
 
-(async function init() {
-    await loadAndApplySiteSettings();
-    const categories = await getAllCategories();
-    const item = document.getElementById('nav-category-item');
-    const menu = document.getElementById('nav-category-menu');
-    if (categories.length) {
-        item.style.display = '';
-        categories.forEach(cat => {
-            const li = document.createElement('li');
-            li.innerHTML = `<a class="dropdown-item" href="index.html?category_id=${encodeURIComponent(cat.id)}">${esc(cat.name)}</a>`;
-            menu.appendChild(li);
-        });
+function updateCartCount() {
+    const count = Cart.count();
+    const badge = document.getElementById('cart-count');
+    if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = '';
+    } else {
+        badge.style.display = 'none';
     }
-})();
+}
+
+window.addEventListener('cart-updated', updateCartCount);
+setTimeout(updateCartCount, 100);
 </script>
 </body>
 </html>

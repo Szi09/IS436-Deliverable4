@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prototype: Admin Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; }
+    header { background:#212529; color:#fff; padding:1rem; }
+    .container { padding:1.5rem; }
+    .card { background:#fff; border-radius:8px; padding:1rem; box-shadow:0 2px 10px rgba(0,0,0,.08); margin-bottom:1rem; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Admin Dashboard Prototype</h1>
+  </header>
+  <div class="container">
+    <div class="cards card">
+      <div><h2>Orders</h2><p>Order counts, revenue, pending orders, and status.</p></div>
+      <div><h2>Recent Orders</h2><p>Latest activity with order details and status badges.</p></div>
+      <div><h2>Popular Items</h2><p>Top ordered dishes shown as analytics.</p></div>
+    </div>
+    <div class="card">
+      <h2>Actions</h2>
+      <p>Quick links to manage orders, products, categories, and contacts.</p>
+    </div>
+  </div>
+</body>
+</html>

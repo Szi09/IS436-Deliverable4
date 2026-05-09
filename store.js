@@ -73,7 +73,7 @@ const Cart = {
 //  ORDERS
 // ─────────────────────────────────────────────
 const Orders = {
-    _key: 'restaurant_orders',
+    _key: 'orders',
 
     get() {
         return JSON.parse(localStorage.getItem(this._key) || '[]');
