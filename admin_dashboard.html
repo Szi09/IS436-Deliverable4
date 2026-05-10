@@ -193,42 +193,41 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
     loadOrderData();
 })();
 
-async function loadOrderData() {
-    try {
-        const orders = await Orders.get();
-        const today = new Date().toISOString().slice(0, 10);
+function loadOrderData() {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const today = new Date().toISOString().slice(0, 10);
 
-        // Today's orders
-        const todayOrders = orders.filter(o => o.order_date.startsWith(today));
-        document.getElementById('today-orders').textContent = todayOrders.length;
+    // Today's orders
+    const todayOrders = orders.filter(o => o.createdAt.startsWith(today));
+    document.getElementById('today-orders').textContent = todayOrders.length;
 
-        // Today's revenue
-        const todayRevenue = todayOrders.reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
-        document.getElementById('today-revenue').textContent = '$' + todayRevenue.toFixed(2);
+    // Today's revenue
+    const todayRevenue = todayOrders.reduce((sum, o) => sum + o.total, 0);
+    document.getElementById('today-revenue').textContent = '$' + todayRevenue.toFixed(2);
 
-        // Pending orders
-        const pendingOrders = orders.filter(o => o.status === 'pending');
-        document.getElementById('pending-orders').textContent = pendingOrders.length;
+    // Pending orders
+    const pendingOrders = orders.filter(o => o.status === 'pending');
+    document.getElementById('pending-orders').textContent = pendingOrders.length;
 
-        // Total orders
-        document.getElementById('count-orders').textContent = orders.length;
+    // Total orders
+    document.getElementById('count-orders').textContent = orders.length;
 
-        // Recent orders
-        const recentOrders = orders.slice(0, 5);
-        const recentOrdersDiv = document.getElementById('recent-orders');
+    // Recent orders
+    const recentOrders = orders.slice(0, 5);
+    const recentOrdersDiv = document.getElementById('recent-orders');
 
-        if (recentOrders.length > 0) {
-            let html = '<div class="list-group">';
+    if (recentOrders.length > 0) {
+        let html = '<div class="list-group">';
         recentOrders.forEach(order => {
-            const time = new Date(order.order_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const time = new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const statusClass = getStatusClass(order.status);
             html += `
                 <div class="list-group-item">
                     <div class="d-flex w-100 justify-content-between">
-                        <h6 class="mb-1">Order #${order.order_id}</h6>
+                        <h6 class="mb-1">${esc(order.customer.name)}</h6>
                         <small>${time}</small>
                     </div>
-                    <p class="mb-1">$${parseFloat(order.total_amount).toFixed(2)}</p>
+                    <p class="mb-1">${order.items.length} items - $${order.total.toFixed(2)}</p>
                     <small class="text-${statusClass}">${order.status.toUpperCase()}</small>
                 </div>
             `;
@@ -237,19 +236,27 @@ async function loadOrderData() {
         recentOrdersDiv.innerHTML = html;
     }
 
-    // Popular items - simplified for now since order items are in separate table
-    const popularItemsDiv = document.getElementById('popular-items');
-    popularItemsDiv.innerHTML = '<p class="text-muted mb-0">Data will be available after orders are placed</p>';
+    // Popular items
+    const itemCounts = {};
+    orders.forEach(order => {
+        order.items.forEach(item => {
+            itemCounts[item.name] = (itemCounts[item.name] || 0) + item.qty;
+        });
+    });
 
-} catch (error) {
-    console.error('Failed to load order data:', error);
-    // Fallback to show zeros
-    document.getElementById('today-orders').textContent = '0';
-    document.getElementById('today-revenue').textContent = '$0.00';
-    document.getElementById('pending-orders').textContent = '0';
-    document.getElementById('count-orders').textContent = '0';
-    document.getElementById('recent-orders').innerHTML = '<p class="text-muted">No orders yet</p>';
-    document.getElementById('popular-items').innerHTML = '<p class="text-muted mb-0">No data available</p>';
+    const popularItems = Object.entries(itemCounts)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5);
+
+    const popularItemsDiv = document.getElementById('popular-items');
+    if (popularItems.length > 0) {
+        let html = '<ol class="mb-0">';
+        popularItems.forEach(([name, count]) => {
+            html += `<li>${name} (${count} orders)</li>`;
+        });
+        html += '</ol>';
+        popularItemsDiv.innerHTML = html;
+    }
 }
 
 function getStatusClass(status) {

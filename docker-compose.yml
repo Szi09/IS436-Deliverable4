@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   mysql:
@@ -14,9 +13,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./deliverable4_mysql.sql:/docker-entrypoint-initdb.d/01-schema.sql
-    networks:
-      - restaurant_network
+      - ./deliverable4.sql:/docker-entrypoint-initdb.d/01-schema.sql
     command: --default-authentication-plugin=mysql_native_password
 
   web:
@@ -34,12 +31,6 @@ services:
       DB_PASS: restaurant_pass
     volumes:
       - .:/var/www/html
-    networks:
-      - restaurant_network
 
 volumes:
   mysql_data:
-
-networks:
-  restaurant_network:
-    driver: bridge

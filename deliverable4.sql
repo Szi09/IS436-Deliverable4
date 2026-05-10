@@ -1,134 +1,85 @@
--- Deliverable 4 – Data Modeling and Starting Design
--- Project: Web-Based Online Ordering System for Small Restaurant
--- Database: PostgreSQL
-------------------------------------------------------------------------
+DROP TABLE IF EXISTS DELIVERY;
+DROP TABLE IF EXISTS ORDER_ITEMS;
+DROP TABLE IF EXISTS ORDERS;
+DROP TABLE IF EXISTS CART_ITEMS;
+DROP TABLE IF EXISTS CART;
+DROP TABLE IF EXISTS MENU_ITEMS;
+DROP TABLE IF EXISTS USERS;
 
--- 1. USERS table
 CREATE TABLE USERS (
-    user_id SERIAL PRIMARY KEY,
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     phone VARCHAR(20) NOT NULL
 );
 
--- 2. MENU_ITEMS table
 CREATE TABLE MENU_ITEMS (
-    item_id SERIAL PRIMARY KEY,
+    item_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    price DECIMAL(10,2) NOT NULL
+    description VARCHAR(255),
+    price DECIMAL(10,2) NOT NULL,
+    category_id INT DEFAULT 1,
+    category_name VARCHAR(100) DEFAULT 'Main Dishes'
 );
 
--- 3. CART table
 CREATE TABLE CART (
-    cart_id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES USERS(user_id) ON DELETE CASCADE
+    cart_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE CASCADE
 );
 
--- 4. CART_ITEMS table
 CREATE TABLE CART_ITEMS (
-    cart_item_id SERIAL PRIMARY KEY,
-    cart_id INTEGER NOT NULL REFERENCES CART(cart_id) ON DELETE CASCADE,
-    item_id INTEGER NOT NULL REFERENCES MENU_ITEMS(item_id),
-    quantity INTEGER NOT NULL,
-    saved_for_later BOOLEAN DEFAULT FALSE
+    cart_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    cart_id INT NOT NULL,
+    item_id INT NOT NULL,
+    quantity INT NOT NULL,
+    saved_for_later TINYINT(1) DEFAULT 0,
+    FOREIGN KEY (cart_id) REFERENCES CART(cart_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES MENU_ITEMS(item_id)
 );
 
--- 5. ORDERS table
 CREATE TABLE ORDERS (
-    order_id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES USERS(user_id),
-    order_type VARCHAR(20) NOT NULL CHECK (order_type IN ('delivery', 'pickup')),
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    order_type VARCHAR(20) NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled')),
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    status VARCHAR(20) DEFAULT 'pending',
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id)
 );
 
--- 6. ORDER_ITEMS table
 CREATE TABLE ORDER_ITEMS (
-    order_item_id SERIAL PRIMARY KEY,
-    order_id INTEGER NOT NULL REFERENCES ORDERS(order_id) ON DELETE CASCADE,
-    item_id INTEGER NOT NULL REFERENCES MENU_ITEMS(item_id),
-    quantity INTEGER NOT NULL,
-    price_at_time DECIMAL(10,2) NOT NULL
+    order_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    item_id INT NOT NULL,
+    quantity INT NOT NULL,
+    price_at_time DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES ORDERS(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (item_id) REFERENCES MENU_ITEMS(item_id)
 );
 
--- 7. DELIVERY table
 CREATE TABLE DELIVERY (
-    delivery_id SERIAL PRIMARY KEY,
-    order_id INTEGER NOT NULL UNIQUE REFERENCES ORDERS(order_id) ON DELETE CASCADE,
+    delivery_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL UNIQUE,
     address VARCHAR(255) NOT NULL,
     city VARCHAR(100) NOT NULL,
     state VARCHAR(50) NOT NULL,
     zip_code VARCHAR(20) NOT NULL,
-    estimated_time VARCHAR(100)
+    estimated_time VARCHAR(100),
+    FOREIGN KEY (order_id) REFERENCES ORDERS(order_id) ON DELETE CASCADE
 );
 
------------------------------------------------------------------------------------------------
-
--- Insert users (5 customers)
 INSERT INTO USERS (name, email, phone) VALUES
 ('James Wilson', 'james.wilson@example.com', '301-555-2341'),
-('Maria Garcia', 'maria.garcia@example.com', '443-555-7892'),
-('David Chen', 'david.chen@example.com', '410-555-4563'),
-('Lisa Rodriguez', 'lisa.rodriguez@example.com', '240-555-8904'),
-('Michael Thompson', 'michael.thompson@example.com', '667-555-1235');
+('Maria Garcia', 'maria.garcia@example.com', '443-555-7892');
 
--- Insert menu items (8 shawarma restaurant items)
-INSERT INTO MENU_ITEMS (name, price) VALUES
-('Chicken Shawarma Wrap', 9.99),
-('Beef Shawarma Wrap', 10.99),
-('Lamb Shawarma Plate', 14.99),
-('Falafel Wrap', 8.99),
-('Hummus with Pita', 4.99),
-('French Fries', 3.99),
-('Baklava', 3.49),
-('Mint Lemonade', 2.99);
+INSERT INTO MENU_ITEMS (name, description, price, category_id, category_name) VALUES
+('BBQ Chicken Pizza', 'Smoky BBQ chicken pizza.', 14.99, 1, 'Pizza'),
+('Caesar Salad', 'Fresh Caesar salad.', 9.99, 2, 'Salads'),
+('French Fries', 'Golden crispy fries.', 3.99, 3, 'Sides'),
+('Garlic Bread', 'Toasted garlic bread.', 4.99, 3, 'Sides'),
+('Greek Salad', 'Greek salad with feta.', 8.99, 2, 'Salads'),
+('Margherita Pizza', 'Classic margherita pizza.', 12.99, 1, 'Pizza'),
+('Spaghetti Bolognese', 'Pasta with meat sauce.', 13.99, 4, 'Pasta'),
+('Tiramisu', 'Italian dessert.', 6.99, 5, 'Dessert');
 
--- Insert carts (one per user)
-INSERT INTO CART (user_id) VALUES (1), (2), (3), (4), (5);
-
--- Insert cart items (sample shopping carts)
-INSERT INTO CART_ITEMS (cart_id, item_id, quantity, saved_for_later) VALUES
-(1, 1, 2, FALSE),
-(1, 6, 1, FALSE),
-(2, 2, 1, FALSE),
-(2, 8, 2, TRUE),
-(3, 4, 1, FALSE),
-(4, 3, 1, FALSE),
-(5, 5, 1, FALSE),
-(5, 7, 2, FALSE);
-
--- Insert orders (5 orders across different users)
-INSERT INTO ORDERS (user_id, order_type, total_amount, status) VALUES
-(1, 'delivery', 23.97, 'completed'),
-(2, 'pickup', 10.99, 'confirmed'),
-(3, 'delivery', 8.99, 'preparing'),
-(4, 'pickup', 14.99, 'ready'),
-(1, 'delivery', 5.98, 'pending');
-
--- Insert order items (items within each order)
-INSERT INTO ORDER_ITEMS (order_id, item_id, quantity, price_at_time) VALUES
-(1, 1, 2, 9.99),
-(1, 6, 1, 3.99),
-(2, 2, 1, 10.99),
-(3, 4, 1, 8.99),
-(4, 3, 1, 14.99),
-(5, 6, 1, 3.99),
-(5, 5, 1, 1.99);
-
--- Insert delivery records (only for delivery-type orders)
-INSERT INTO DELIVERY (order_id, address, city, state, zip_code, estimated_time) VALUES
-(1, '742 Evergreen Terrace', 'Springfield', 'MD', '21201', '25-35 minutes'),
-(3, '221B Baker Street', 'Baltimore', 'MD', '21218', '15-20 minutes'),
-(5, '742 Evergreen Terrace', 'Springfield', 'MD', '21201', '30-40 minutes');
-
----------------------------------------------------------------------------------------------
-
--- VERIFICATION QUERIES
-SELECT * FROM USERS;
-SELECT * FROM MENU_ITEMS;
-SELECT * FROM CART;
-SELECT * FROM CART_ITEMS;
-SELECT * FROM ORDERS;
-SELECT * FROM ORDER_ITEMS;
-SELECT * FROM DELIVERY;

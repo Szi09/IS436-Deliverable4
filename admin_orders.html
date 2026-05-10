@@ -117,15 +117,9 @@ document.getElementById('footer-year').textContent = new Date().getFullYear();
 let allOrders = [];
 let currentOrderId = null;
 
-async function loadOrders() {
-    try {
-        allOrders = await Orders.get();
-        renderOrders(allOrders);
-    } catch (error) {
-        console.error('Failed to load orders:', error);
-        allOrders = [];
-        renderOrders([]);
-    }
+function loadOrders() {
+    allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+    renderOrders(allOrders);
 }
 
 function renderOrders(orders) {
@@ -154,31 +148,33 @@ function renderOrders(orders) {
     `;
 
     orders.forEach(order => {
-        const date = new Date(order.order_date).toLocaleDateString();
-        const time = new Date(order.order_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const date = new Date(order.createdAt).toLocaleDateString();
+        const time = new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const statusClass = getStatusClass(order.status);
+        const itemCount = order.items.reduce((sum, item) => sum + item.qty, 0);
 
         html += `
             <tr>
-                <td>${order.order_id}</td>
-                <td>Customer #${order.user_id}</td>
-                <td>$${parseFloat(order.total_amount).toFixed(2)}</td>
+                <td>${order.id}</td>
+                <td>${esc(order.customer?.name || order.name || 'Unknown Customer')}</td>
+                <td>${itemCount} items</td>
+                <td>$${order.total.toFixed(2)}</td>
                 <td><span class="badge bg-${statusClass}">${order.status.toUpperCase()}</span></td>
                 <td>${date}<br><small class="text-muted">${time}</small></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewOrder('${order.order_id}')">View</button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewOrder('${order.id}')">View</button>
                     <div class="dropdown d-inline">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             Status
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.order_id}', 'confirmed')">Confirmed</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.order_id}', 'preparing')">Preparing</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.order_id}', 'ready')">Ready</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.order_id}', 'delivered')">Delivered</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.order_id}', 'picked_up')">Picked Up</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.id}', 'confirmed')">Confirmed</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.id}', 'preparing')">Preparing</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.id}', 'ready')">Ready</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.id}', 'delivered')">Delivered</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="updateOrderStatus('${order.id}', 'picked_up')">Picked Up</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="#" onclick="updateOrderStatus('${order.order_id}', 'cancelled')">Cancel</a></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="updateOrderStatus('${order.id}', 'cancelled')">Cancel</a></li>
                         </ul>
                     </div>
                 </td>
@@ -195,43 +191,47 @@ function renderOrders(orders) {
     container.innerHTML = html;
 }
 
-async function viewOrder(orderId) {
-    const order = allOrders.find(o => o.order_id == orderId);
+function viewOrder(orderId) {
+    const order = allOrders.find(o => o.id === orderId);
     if (!order) return;
 
     currentOrderId = orderId;
 
-    const date = new Date(order.order_date).toLocaleString();
-    const deliveryText = order.order_type === 'delivery' ? 'Delivery' : 'Pickup';
+    const date = new Date(order.createdAt).toLocaleString();
+    const deliveryText = order.deliveryType === 'delivery' ? 'Delivery' : 'Pickup';
+    const paymentText = order.paymentType === 'card' ? 'Credit/Debit Card' : 'Cash';
 
     let itemsHtml = '';
-    // For now, show basic order info since detailed items are in separate table
-    itemsHtml = `
-        <tr>
-            <td>Order #${order.order_id}</td>
-            <td>${deliveryText}</td>
-            <td>$${parseFloat(order.total_amount).toFixed(2)}</td>
-            <td>${order.status}</td>
-        </tr>
-    `;
+    order.items.forEach(item => {
+        const subtotal = (parseFloat(item.price) * item.qty).toFixed(2);
+        itemsHtml += `
+            <tr>
+                <td>${esc(item.name)}</td>
+                <td>x${item.qty}</td>
+                <td>$${parseFloat(item.price).toFixed(2)}</td>
+                <td>$${subtotal}</td>
+            </tr>
+        `;
+    });
 
     const detailsHtml = `
         <div class="row">
             <div class="col-md-6">
                 <h6>Order Information</h6>
-                <p><strong>Order ID:</strong> ${order.order_id}</p>
+                <p><strong>Order ID:</strong> ${order.id}</p>
                 <p><strong>Date:</strong> ${date}</p>
                 <p><strong>Status:</strong> <span class="badge bg-${getStatusClass(order.status)}">${order.status.toUpperCase()}</span></p>
                 <p><strong>Delivery Method:</strong> ${deliveryText}</p>
-                <p><strong>Total Amount:</strong> $${parseFloat(order.total_amount).toFixed(2)}</p>
+                <p><strong>Payment Method:</strong> ${paymentText}</p>
+                ${order.eta ? `<p><strong>ETA:</strong> ${order.eta}</p>` : ''}
             </div>
             <div class="col-md-6">
                 <h6>Customer Information</h6>
-                <p><strong>Customer ID:</strong> ${order.user_id}</p>
-                ${order.address ? `<p><strong>Address:</strong> ${esc(order.address)}</p>` : ''}
-                ${order.city ? `<p><strong>City:</strong> ${esc(order.city)}</p>` : ''}
-                ${order.state ? `<p><strong>State:</strong> ${esc(order.state)}</p>` : ''}
-                ${order.zip_code ? `<p><strong>ZIP Code:</strong> ${esc(order.zip_code)}</p>` : ''}
+                <p><strong>Name:</strong> ${esc(order.customer?.name || order.name || 'Unknown Customer')}</p>
+                <p><strong>Email:</strong> ${esc(order.customer?.email || order.email || 'N/A')}</p>
+                <p><strong>Phone:</strong> ${esc(order.customer?.phone || order.phone || 'N/A')}</p>
+                ${order.customer.address ? `<p><strong>Address:</strong> ${esc(order.customer.address)}</p>` : ''}
+                ${order.notes ? `<p><strong>Notes:</strong> ${esc(order.notes)}</p>` : ''}
             </div>
         </div>
         <hr>
@@ -251,8 +251,22 @@ async function viewOrder(orderId) {
                 </tbody>
                 <tfoot>
                     <tr>
+                        <th colspan="3">Subtotal</th>
+                        <th>$${order.subtotal.toFixed(2)}</th>
+                    </tr>
+                    <tr>
+                        <th colspan="3">Tax (8%)</th>
+                        <th>$${order.tax.toFixed(2)}</th>
+                    </tr>
+                    ${order.deliveryFee > 0 ? `
+                    <tr>
+                        <th colspan="3">Delivery Fee</th>
+                        <th>$${order.deliveryFee.toFixed(2)}</th>
+                    </tr>
+                    ` : ''}
+                    <tr>
                         <th colspan="3">Total</th>
-                        <th><strong>$${parseFloat(order.total_amount).toFixed(2)}</strong></th>
+                        <th><strong>$${order.total.toFixed(2)}</strong></th>
                     </tr>
                 </tfoot>
             </table>
@@ -263,19 +277,25 @@ async function viewOrder(orderId) {
     new bootstrap.Modal(document.getElementById('orderModal')).show();
 }
 
-async function updateOrderStatus(orderId, newStatus) {
-    try {
-        await Orders.updateStatus(orderId, newStatus);
-        // Reload orders to reflect changes
-        await loadOrders();
+function updateOrderStatus(orderId, newStatus) {
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const orderIndex = orders.findIndex(o => o.id === orderId);
+    
+    if (orderIndex !== -1) {
+        orders[orderIndex].status = newStatus;
+        localStorage.setItem('orders', JSON.stringify(orders));
+        
+        // Update the current orders array
+        allOrders = orders;
+        
+        // Re-render the orders table
+        renderOrders(applyFilters());
+        
         // Close modal if open
         const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
-        if (modal) modal.hide();
-    } catch (error) {
-        console.error('Failed to update order status:', error);
-        alert('Failed to update order status. Please try again.');
-    }
-}
+        if (modal) {
+            modal.hide();
+        }
         
         showAlert(`Order status updated to ${newStatus}`, 'success');
     }
